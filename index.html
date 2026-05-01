@@ -2613,16 +2613,15 @@ function renderSettings(){
     return;
   }
   
-  // Ειδοποίηση χαμηλού stock
-  const lowStock=frags.filter(f=>(f.stock||0)<(f.min||20));
+  // Ειδοποίηση χαμηλού stock - πάντα αφαιρούμε πρώτα
+  const oldWarn=document.getElementById('frag-low-warn');if(oldWarn)oldWarn.remove();
+  const lowStock=frags.filter(f=>(f.stock||0)<(f.min||20)&&(f.min||0)>0);
   if(lowStock.length>0){
-    const warn=document.getElementById('frag-low-warn')||document.createElement('div');
+    const warn=document.createElement('div');
     warn.id='frag-low-warn';
     warn.style.cssText='background:rgba(245,101,101,.1);border:1px solid var(--rd);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--rd)';
-    warn.innerHTML='⚠️ <strong>Χαμηλό stock (ml):</strong> '+lowStock.map(f=>`${f.name} (${f.stock||0}ml)`).join(', ');
+    warn.innerHTML='⚠️ <strong>Χαμηλό stock:</strong> '+lowStock.map(f=>`${f.name} (${f.stock||0}ml)`).join(', ');
     el.parentNode.insertBefore(warn, el);
-  } else {
-    const old=document.getElementById('frag-low-warn');if(old)old.remove();
   }
   el.innerHTML=frags.map(f=>{
     const pct=Math.min(100,Math.round((f.stock/(f.min*2||200))*100));
