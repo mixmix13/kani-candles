@@ -2616,7 +2616,7 @@ function renderSettings(){
   
   // Ειδοποίηση χαμηλού stock
   const oldWarn=document.getElementById('frag-low-warn');if(oldWarn)oldWarn.remove();
-  const lowStock=frags.filter(f=>f.minstock&&f.minstock>0&&(f.stock||0)<f.minstock&&f.stock!==undefined);
+  const lowStock=[]; // disabled - θα ενεργοποιηθεί ξανά αργότερα
   if(lowStock.length>0){
     const warn=document.createElement('div');
     warn.id='frag-low-warn';
