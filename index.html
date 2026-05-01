@@ -2546,7 +2546,8 @@ function saveFrag(){
   const data={
     name,
     stock:parseFloat(document.getElementById('frag-stock').value)||0,
-    min:parseFloat(document.getElementById('frag-min').value)||100,
+    min:parseFloat(document.getElementById('frag-min').value)||0,
+    minstock:parseFloat(document.getElementById('frag-min').value)||0,
     notes:document.getElementById('frag-notes').value||''
   };
   if(eid){
@@ -2615,7 +2616,8 @@ function renderSettings(){
   
   // Ειδοποίηση χαμηλού stock - πάντα αφαιρούμε πρώτα
   const oldWarn=document.getElementById('frag-low-warn');if(oldWarn)oldWarn.remove();
-  const lowStock=frags.filter(f=>(f.stock||0)<(f.min||20)&&(f.min||0)>0);
+  // Εμφάνιση μόνο αν ο χρήστης έχει ορίσει minstock (νέο πεδίο) και το stock είναι κάτω
+  const lowStock=frags.filter(f=>f.minstock&&f.minstock>0&&(f.stock||0)<f.minstock);
   if(lowStock.length>0){
     const warn=document.createElement('div');
     warn.id='frag-low-warn';
