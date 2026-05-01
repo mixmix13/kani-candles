@@ -290,6 +290,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:'Syne',sa
 /* no scroll during sheet */
 body.locked{overflow:hidden}
 
+/* ── CUSTOMER AUTOCOMPLETE ── */
+#o-cust-dd div:hover{background:var(--bg3)!important}
+
 /* ── SAVE / SYNC INDICATORS ── */
 .save-ind,.sync-ind{
   position:fixed;top:calc(var(--safe-t) + 56px);right:14px;
@@ -354,7 +357,8 @@ body.locked{overflow:hidden}
       </div>
       <div class="card">
         <div class="card-hd"><span class="card-ttl">Πρόσφατες</span><span class="card-act" onclick="goPage('orders')">Όλες →</span></div>
-        <div class="card-body" id="dash-orders"></div>
+        <div id="delivery-alerts" style="display:none;background:rgba(245,101,101,.08);border:1px solid rgba(245,101,101,.3);border-radius:var(--rs);padding:12px;margin-bottom:12px"></div>
+    <div class="card-body" id="dash-orders"></div>
       </div>
       <div class="card">
         <div class="card-hd"><span class="card-ttl">Top Πελάτες</span><span class="card-act" onclick="goPage('customers')">Όλοι →</span></div>
@@ -405,6 +409,12 @@ body.locked{overflow:hidden}
         <div class="stat"><div class="stat-v" id="an-orders">—</div><div class="stat-l">Παραγγελίες</div></div>
         <div class="stat"><div class="stat-v" id="an-custs-n">—</div><div class="stat-l">Πελάτες</div></div>
         <div class="stat"><div class="stat-v" id="an-avg">—</div><div class="stat-l">Μέση Αξία</div></div>
+      </div>
+      <!-- Κόστος & Κέρδος -->
+      <div class="stat-row" style="margin-bottom:4px">
+        <div class="stat" style="border-color:rgba(245,101,101,.3)"><div class="stat-v" id="an-matcost" style="color:var(--rd)">—</div><div class="stat-l">💰 Κόστος Υλικών</div></div>
+        <div class="stat" style="border-color:rgba(61,214,140,.3)"><div class="stat-v" id="an-profit" style="color:var(--gr)">—</div><div class="stat-l">📈 Καθαρό Κέρδος</div></div>
+        <div class="stat" style="border-color:rgba(236,201,75,.3)"><div class="stat-v" id="an-margin" style="color:var(--gold)">—</div><div class="stat-l">📊 Περιθώριο</div></div>
       </div>
       <div class="forecast-box">
         <div class="forecast-lbl">📈 Πρόβλεψη Επόμενου Μήνα</div>
@@ -617,10 +627,23 @@ body.locked{overflow:hidden}
     <input type="hidden" id="o-eid">
 
     <!-- Customer + payment -->
-    <div class="fg"><label class="fl">Πελάτης</label><select class="fs" id="o-cust"></select></div>
+    <div class="fg" style="position:relative">
+      <label class="fl">Πελάτης</label>
+      <input class="fi" type="text" id="o-cust-input" placeholder="Πληκτρολόγησε όνομα..." autocomplete="off"
+        oninput="filterCustDropdown(this.value)"
+        onfocus="filterCustDropdown(this.value)"
+        onblur="setTimeout(()=>hideCustDropdown(),200)"
+        style="font-size:14px">
+      <input type="hidden" id="o-cust">
+      <div id="o-cust-dd" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--bg2);border:1px solid var(--line);border-radius:var(--rs);z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>
+    </div>
     <div class="frow">
       <div class="fg"><label class="fl">Πληρωμή</label><select class="fs" id="o-pay"><option>Μετρητά</option><option>Κάρτα</option><option>Τραπεζική</option><option>Αντικαταβολή</option></select></div>
       <div class="fg"><label class="fl">Πληρώθηκε</label><select class="fs" id="o-paid"><option value="Ναι">✅ Ναι</option><option value="Όχι">⏳ Όχι</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">📋 Κατάσταση</label><select class="fs" id="o-status"><option value="new">🆕 Νέα</option><option value="progress">🔧 Σε εξέλιξη</option><option value="ready">✅ Έτοιμη</option><option value="delivered">🚚 Παραδόθηκε</option></select></div>
+      <div class="fg"><label class="fl">📅 Παράδοση</label><input class="fi" type="date" id="o-delivery"></div>
     </div>
 
     <!-- Items list -->
@@ -649,6 +672,20 @@ body.locked{overflow:hidden}
       </div>
       <button class="btn btn-sec btn-sm" onclick="reorderThis()" style="margin-bottom:6px">🔄 Επανάληψη</button>
     <button class="btn btn-sec btn-sm" onclick="showReceipt()" style="margin-bottom:8px">🧾 Απόδειξη PDF</button>
+    <div id="o-cost-box" style="display:none;background:var(--bg2);border:1px solid var(--line);border-radius:var(--rs);padding:10px 14px;margin-bottom:8px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--t2)">💰 Κόστος υλικών:</span>
+        <span id="o-cost-val" style="font-weight:700;color:var(--rd)"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--t2)">📈 Κέρδος:</span>
+        <span id="o-profit-val" style="font-weight:700;color:var(--gr)"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--t2)">📊 Περιθώριο:</span>
+        <span id="o-margin-val" style="font-weight:700;color:var(--gold)"></span>
+      </div>
+    </div>
     </div>
     <div style="height:8px"></div>
     <button class="btn btn-sec" onclick="closeSheet('order')">Άκυρο</button>
@@ -805,8 +842,8 @@ body.locked{overflow:hidden}
     <input type="hidden" id="frag-eid">
     <div class="fg"><label class="fl">Όνομα Αρώματος</label><input class="fi" type="text" id="frag-name" placeholder="π.χ. Βανίλια, Λεβάντα..."></div>
     <div class="frow">
-      <div class="fg"><label class="fl">Stock (ml)</label><input class="fi" type="number" id="frag-stock" min="0" placeholder="500"></div>
-      <div class="fg"><label class="fl">Ελάχιστο (ml)</label><input class="fi" type="number" id="frag-min" min="0" placeholder="100"></div>
+      <div class="fg"><label class="fl">Stock (g)</label><input class="fi" type="number" id="frag-stock" min="0" placeholder="500"></div>
+      <div class="fg"><label class="fl">⚠️ Ελάχιστο (g)</label><input class="fi" type="number" id="frag-min" min="0" placeholder="20"></div>
     </div>
     <div class="fg"><label class="fl">Σημειώσεις</label><input class="fi" type="text" id="frag-notes" placeholder="π.χ. Floral, Woody, Fresh..."></div>
     <button class="btn btn-g" onclick="saveFrag()">💾 Αποθήκευση</button>
@@ -922,10 +959,12 @@ function openSheet(type,id=null){
     document.getElementById('o-eid').value='';
     document.getElementById('sh-order-t').textContent='Νέα Παραγγελία';
     document.getElementById('o-cust').value='';
+    document.getElementById('o-cust-input').value='';
     document.getElementById('o-pay').value='Μετρητά';
     document.getElementById('o-paid').value='Ναι';
     document.getElementById('o-del-w').style.display='none';
     document.getElementById('o-action-btns').style.display='none';
+    const _cb=document.getElementById('o-cost-box');if(_cb)_cb.style.display='none';
     _orderItems=[];
     addOrderItem(); // start with one empty row
     calcOrderTotal();
@@ -937,13 +976,28 @@ function openSheet(type,id=null){
         document.getElementById('o-eid').value=id;
         document.getElementById('sh-order-t').textContent='Επεξεργασία Παραγγελίας';
         document.getElementById('o-cust').value=o.customer;
+        document.getElementById('o-cust-input').value=o.customer;
         document.getElementById('o-pay').value=o.payment||'Μετρητά';
         document.getElementById('o-paid').value=o.paid||'Ναι';
+        document.getElementById('o-status').value=o.status||'new';
+        document.getElementById('o-delivery').value=o.delivery||'';
         document.getElementById('o-del-w').style.display='block';
         document.getElementById('o-action-btns').style.display='grid';
         _orderItems=siblings.map(s=>({prod:s.product,qty:s.qty,price:s.price,fragrance:s.fragrance||'',weight:s.weight||0,discount:s.discount||0}));
         renderOrderItems();
         calcOrderTotal();
+        // Κόστος & περιθώριο κέρδους
+        const _revenue=siblings.reduce((s,x)=>s+Math.max(0,(x.qty*(x.price||0))-(x.discount||0)),0);
+        const _cost=calcOrderCost(siblings);
+        const _profit=_revenue-_cost;
+        const _margin=_revenue>0?Math.round(_profit/_revenue*100):0;
+        const cb=document.getElementById('o-cost-box');
+        if(cb){
+          cb.style.display='block';
+          document.getElementById('o-cost-val').textContent=fmt(_cost)+'€';
+          document.getElementById('o-profit-val').textContent=(_profit>=0?'+':'')+fmt(_profit)+'€';
+          document.getElementById('o-margin-val').textContent=_margin+'%';
+        }
       }
     }
   } else if(type==='customer'){
@@ -970,10 +1024,28 @@ function openSheet(type,id=null){
       const cOrders=db.orders.filter(o=>o.customer===c.name).slice(0,8);
       if(cOrders.length){
         document.getElementById('c-history-wrap').style.display='block';
-        document.getElementById('c-history-list').innerHTML=cOrders.map(o=>`
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px">
-            <span style="color:var(--t1);font-weight:600">${o.product}</span>
-            <span style="color:var(--gold);font-family:'JetBrains Mono',monospace">${fmt(o.total)}</span>
+        // Group by orderNum for history
+        const seenH=new Set();const groupedH=[];
+        cOrders.forEach(o=>{
+          const key=o.orderNum+'|'+o.date;
+          if(!seenH.has(key)){
+            seenH.add(key);
+            const sibs=db.orders.filter(x=>x.orderNum===o.orderNum&&x.customer===o.customer&&x.date===o.date);
+            const tot=sibs.reduce((s,x)=>s+Math.max(0,(x.qty*(x.price||0))-(x.discount||0)),0);
+            groupedH.push({...o,sibs,tot});
+          }
+        });
+        const SMAP2={'new':'🆕','progress':'🔧','ready':'📦','delivered':'🚚'};
+        document.getElementById('c-history-list').innerHTML=groupedH.map(o=>`
+          <div style="padding:8px 0;border-bottom:1px solid var(--line);font-size:12px" onclick="openSheet('order','${o.id}')" style="cursor:pointer">
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+              <span style="color:var(--t1);font-weight:700">${o.sibs.length>1?o.sibs.length+' προϊόντα':o.product} ${o.status?SMAP2[o.status]||'':''}</span>
+              <span style="color:var(--gold);font-weight:700">${fmt(o.tot)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:var(--t2)">
+              <span>${o.sibs.map(s=>s.product+(s.fragrance?' 🌸'+s.fragrance:'')).join(', ')}</span>
+              <span>${fmtDF(o.date)}</span>
+            </div>
           </div>`).join('');
       }
     }}
@@ -1029,15 +1101,38 @@ function closeOv(e,t){if(e.target===e.currentTarget)closeSheet(t)}
 // _orderItems: [{prod, qty, price}]
 let _orderItems = [];
 
+function filterCustDropdown(q){
+  const dd=document.getElementById('o-cust-dd');
+  const list=window._custList||[];
+  const filtered=q
+    ?list.filter(n=>n.toLowerCase().startsWith(q.toLowerCase())||n.toLowerCase().includes(q.toLowerCase()))
+    :list;
+  if(!filtered.length){dd.style.display='none';return;}
+  dd.style.display='block';
+  dd.innerHTML=filtered.map(n=>`
+    <div style="padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--line)"
+      onmousedown="selectCust('${n.replace(/'/g,"\\'")}')">
+      👤 ${n}
+    </div>`).join('');
+}
+function selectCust(name){
+  document.getElementById('o-cust').value=name;
+  document.getElementById('o-cust-input').value=name;
+  document.getElementById('o-cust-dd').style.display='none';
+}
+function hideCustDropdown(){
+  const dd=document.getElementById('o-cust-dd');
+  if(dd) dd.style.display='none';
+  // Αν δεν έχει επιλεγεί από dropdown, κρατάμε ό,τι πληκτρολογήθηκε
+  const inp=document.getElementById('o-cust-input');
+  const hid=document.getElementById('o-cust');
+  if(inp&&!hid.value) hid.value=inp.value;
+}
+
 function populateSelects(){
   const db=DB.get();
-  // Πελάτες
-  const cs=document.getElementById('o-cust'),cv=cs.value;
-  cs.innerHTML='<option value="">— Επίλεξε πελάτη —</option>';
-  [...db.customers].sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
-    cs.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
-  });
-  if(cv)cs.value=cv;
+  // Πελάτες - αποθηκεύουμε απλά τη λίστα, το autocomplete τη χρησιμοποιεί
+  window._custList=(db.customers||[]).map(c=>c.name).sort((a,b)=>a.localeCompare(b,'el'));
   // Αρώματα φορτώνονται ανά item μέσω buildFragOptions()
 }
 
@@ -1180,7 +1275,9 @@ function getSelectedLabels(){
 // CRUD
 // ════════════════════════════════════════
 function saveOrder(){
-  const cust=document.getElementById('o-cust').value.trim();
+  const custHid=document.getElementById('o-cust');
+  if(!custHid.value.trim()){const inp=document.getElementById('o-cust-input');if(inp?.value.trim())custHid.value=inp.value.trim();}
+  const cust=custHid.value.trim();
   if(!cust){toast('Επίλεξε πελάτη','err');return}
   const validItems=_orderItems.filter(it=>it.prod&&it.qty>0);
   if(!validItems.length){toast('Πρόσθεσε τουλάχιστον 1 προϊόν','err');return}
@@ -1209,6 +1306,8 @@ function saveOrder(){
     fragrance:it.fragrance||'',
     weight:it.weight||0,
     payment,paid,
+    status:document.getElementById('o-status')?.value||'new',
+    delivery:document.getElementById('o-delivery')?.value||'',
     date:eid?db.orders.find(x=>x.orderNum===orderNum)?.date||date:date,
     source:'new'
   }));
@@ -1233,6 +1332,61 @@ function saveOrder(){
   DB.set(db);closeSheet('order');
   toast(eid?'Ενημερώθηκε ✓':'Αποθηκεύτηκε ✓','ok');
   renderOrders();updateBadges();if(curPage==='dash')renderDash();
+  checkDeliveryAlerts();
+}
+
+function calcOrderCost(siblings){
+  const db=DB.get();
+  const pr=db.rawPrices||{wax:8,wax2:10,frag:8,solv:10,alc:10,soap:8,dye:2,almond:10,porcelain:6};
+  const wax1=pr.wax/1000;    // κερί δοχείου €/g
+  const wax2=(pr.wax2||10)/1000; // κερί καλουπιών €/g
+  const frag=pr.frag/100;    // άρωμα €/g
+  const solv=(pr.solv||10)/1000; // διαλύτης €/g
+  const alc=(pr.alc||10)/1000;   // οινόπνευμα €/g
+  const soap=(pr.soap||8)/1000;  // σαπούνι €/g
+  const dye=(pr.dye||2)/100;     // χρώμα €/g
+  const almond=(pr.almond||10)/1000; // αμυγδαλέλαιο €/g
+  const porcelain=(pr.porcelain||6)/1000; // πορσελάνη €/g
+
+  let totalCost=0;
+  siblings.forEach(item=>{
+    const cat=calcItemCategory(item.product);
+    const w=item.weight||0;
+    const qty=item.qty||1;
+    let unitCost=0;
+
+    if(cat==='docheio'){
+      // Κερί δοχείου: κερί + 10% άρωμα
+      unitCost=w*wax1 + (w*0.10)*frag;
+    } else if(cat==='kaloupis'){
+      // Καλούπια/cupcakes/waxmelts/ντουλάπας: κερί καλουπιών + 12% άρωμα
+      unitCost=w*wax2 + (w*0.12)*frag;
+    } else if(cat==='diffuser'){
+      // Diffuser ανά 100g: δοχείο 3€ + ξυλάκια 1€ + 20g άρωμα + 70g διαλύτης + 10g οινόπνευμα
+      const units=w/100||1;
+      unitCost=(3+1)*units + 20*frag*units + 70*solv*units + 10*alc*units;
+    } else if(cat==='auto'){
+      // Αρωματικό αυτοκινήτου: δοχείο 1€ + 6g διαλύτης + 2g άρωμα
+      unitCost=1 + 6*solv + 2*frag;
+    } else if(cat==='squeezable'){
+      // Squeezable: 32g κερί + 72g αμυγδαλέλαιο + 20g άρωμα
+      unitCost=32*wax1 + 72*almond + 20*frag;
+    } else if(cat==='saponi'){
+      // Σαπούνι: σαπούνι + 3% άρωμα + 4g χρώμα
+      unitCost=w*soap + (w*0.03)*frag + 4*dye;
+    } else if(cat==='fabricmist'){
+      // Fabric mist: δοχείο 1€ + νερό (45g@0.001) + 45g διαλύτης + 5% άρωμα
+      unitCost=1 + 45*0.001 + 45*solv + (w*0.05)*frag;
+    } else if(cat==='porselani'){
+      // Πορσελάνη: μόνο σκόνη
+      unitCost=w*porcelain;
+    } else {
+      // Default: κερί δοχείου
+      unitCost=w*wax1 + (w*0.10)*frag;
+    }
+    totalCost+=unitCost*qty;
+  });
+  return Math.round(totalCost*100)/100;
 }
 
 function calcItemCategory(prodName){
@@ -1356,6 +1510,7 @@ function reorderThis(){
     openSheet('order');
     setTimeout(()=>{
       document.getElementById('o-cust').value=orig.customer;
+      document.getElementById('o-cust-input').value=orig.customer;
       document.getElementById('o-paid').value='Όχι';
       document.getElementById('o-eid').value='';
       document.getElementById('sh-order-t').textContent='Επανάληψη Παραγγελίας';
@@ -1465,12 +1620,13 @@ function renderOrders(){
       grouped.push({...o, groupTotal, prodSummary, sibCount:siblings.length});
     }
   });
+  const SMAP={'new':'🆕','progress':'🔧','ready':'📦','delivered':'🚚'};
   document.getElementById('o-list').innerHTML=grouped.length?grouped.map(o=>`
     <div class="li" onclick="openSheet('order','${o.id}')">
       <div class="li-ico" style="background:${o.paid==='Ναι'?'rgba(61,214,140,.1)':'rgba(245,101,101,.1)'};font-size:14px">${o.paid==='Ναι'?'✅':'⏳'}</div>
       <div class="li-body">
-        <div class="li-t">${o.customer}</div>
-        <div class="li-s">${o.prodSummary} · ${o.payment||''}</div>
+        <div class="li-t">${o.customer} ${o.status&&o.status!=='new'?SMAP[o.status]||'':''}</div>
+        <div class="li-s">${o.prodSummary} · ${o.payment||''}${o.delivery?' · 📅'+o.delivery.split('-').reverse().join('/')':''}</div>
       </div>
       <div class="li-r"><div class="li-amt">${fmt(o.groupTotal)}</div><div class="li-st">${fmtDF(o.date)}</div></div>
     </div>`).join(''):'<div class="empty" style="padding:28px 0"><div class="empty-ico">📋</div><div class="empty-t">Δεν βρέθηκε</div></div>';
@@ -1538,6 +1694,27 @@ function renderAnalytics(){
   document.getElementById('an-orders').textContent=db.orders.length;
   document.getElementById('an-custs-n').textContent=db.customers.length;
   document.getElementById('an-avg').textContent=fmt(avgOrder);
+
+  // Κόστος υλικών & περιθώριο κέρδους
+  const seen2=new Set();
+  let totalMatCost=0;
+  db.orders.forEach(o=>{
+    const key=o.orderNum+'|'+o.customer+'|'+o.date;
+    if(!seen2.has(key)){
+      seen2.add(key);
+      const sibs=db.orders.filter(x=>x.orderNum===o.orderNum&&x.customer===o.customer&&x.date===o.date);
+      totalMatCost+=calcOrderCost(sibs);
+    }
+  });
+  const totalRevAdj=db.orders.reduce((s,o)=>s+Math.max(0,(o.qty*(o.price||0))-(o.discount||0)),0);
+  const totalProfit=totalRevAdj-totalMatCost-totalExp;
+  const totalMargin=totalRevAdj>0?Math.round((totalRevAdj-totalMatCost)/totalRevAdj*100):0;
+  const anProfit=document.getElementById('an-profit');
+  const anMargin=document.getElementById('an-margin');
+  const anMatCost=document.getElementById('an-matcost');
+  if(anProfit) anProfit.textContent=fmt(totalProfit)+'€';
+  if(anMargin) anMargin.textContent=totalMargin+'%';
+  if(anMatCost) anMatCost.textContent=fmt(totalMatCost)+'€';
 
   // Forecast: linear trend Mar→Apr extrapolated to May
   const marRev=db.orders.filter(o=>new Date(o.date).getMonth()===2).reduce((s,o)=>s+(o.total||0),0);
@@ -2436,6 +2613,17 @@ function renderSettings(){
     return;
   }
   
+  // Ειδοποίηση χαμηλού stock
+  const lowStock=frags.filter(f=>(f.stock||0)<(f.min||20));
+  if(lowStock.length>0){
+    const warn=document.getElementById('frag-low-warn')||document.createElement('div');
+    warn.id='frag-low-warn';
+    warn.style.cssText='background:rgba(245,101,101,.1);border:1px solid var(--rd);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--rd)';
+    warn.innerHTML='⚠️ <strong>Χαμηλό stock:</strong> '+lowStock.map(f=>`${f.name} (${f.stock||0}g)`).join(', ');
+    el.parentNode.insertBefore(warn, el);
+  } else {
+    const old=document.getElementById('frag-low-warn');if(old)old.remove();
+  }
   el.innerHTML=frags.map(f=>{
     const pct=Math.min(100,Math.round((f.stock/(f.min*2||200))*100));
     const cls=f.stock===0?'stock-out':f.stock<=f.min?'stock-low':'stock-ok';
@@ -2671,12 +2859,45 @@ window.fbInitSync = function(){
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
+function checkDeliveryAlerts(){
+  const db=DB.get();
+  const today=new Date(); today.setHours(0,0,0,0);
+  const tomorrow=new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const seen=new Set();
+  const alerts=[];
+  db.orders.forEach(o=>{
+    if(!o.delivery||o.status==='delivered') return;
+    const key=o.orderNum+'|'+o.customer+'|'+o.date;
+    if(seen.has(key)) return;
+    seen.add(key);
+    const d=new Date(o.delivery); d.setHours(0,0,0,0);
+    if(d<today) alerts.push({o,type:'overdue',label:'🔴 Άργησε!'});
+    else if(d.getTime()===today.getTime()) alerts.push({o,type:'today',label:'🟠 Σήμερα!'});
+    else if(d.getTime()===tomorrow.getTime()) alerts.push({o,type:'tomorrow',label:'🟡 Αύριο'});
+  });
+  const box=document.getElementById('delivery-alerts');
+  if(!box) return;
+  if(!alerts.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=`
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;color:var(--rd)">🚚 Παραδόσεις</div>
+    ${alerts.map(a=>`
+      <div onclick="openSheet('order','${a.o.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid ${a.type==='overdue'?'var(--rd)':a.type==='today'?'#ed8936':'#ecc94b'}">
+        <div>
+          <div style="font-size:12px;font-weight:700">${a.o.customer}</div>
+          <div style="font-size:11px;color:var(--t2)">${a.o.product}${a.o.fragrance?' · 🌸'+a.o.fragrance:''}</div>
+        </div>
+        <div style="font-size:11px;font-weight:800;color:${a.type==='overdue'?'var(--rd)':a.type==='today'?'#ed8936':'#ecc94b'}">${a.label}</div>
+      </div>`).join('')}`;
+}
+
 restoreFromIDB().then(() => {
   seed();
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'});
   renderDash();
   updateBadges();
   fbInitSync(); // ☁️ Αυτόματο sync με cloud
+  checkDeliveryAlerts();
 });
 </script>
 </body>
