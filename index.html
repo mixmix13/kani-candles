@@ -2614,16 +2614,7 @@ function renderSettings(){
     return;
   }
   
-  // Ειδοποίηση χαμηλού stock
-  const oldWarn=document.getElementById('frag-low-warn');if(oldWarn)oldWarn.remove();
-  const lowStock=[]; // disabled - θα ενεργοποιηθεί ξανά αργότερα
-  if(lowStock.length>0){
-    const warn=document.createElement('div');
-    warn.id='frag-low-warn';
-    warn.style.cssText='background:rgba(245,101,101,.1);border:1px solid var(--rd);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--rd)';
-    warn.innerHTML='⚠️ <strong>Χαμηλό stock:</strong> '+lowStock.map(f=>`${f.name} (${f.stock}ml)`).join(', ');
-    el.parentNode.insertBefore(warn, el);
-  }
+  // Low stock warning αφαιρέθηκε
   el.innerHTML=frags.map(f=>{
     const pct=Math.min(100,Math.round((f.stock/(f.min*2||200))*100));
     const cls=f.stock===0?'stock-out':f.stock<=f.min?'stock-low':'stock-ok';
@@ -2892,14 +2883,7 @@ function checkDeliveryAlerts(){
 }
 
 restoreFromIDB().then(() => {
-  // Migration: clear old auto-set min values that trigger false low stock warnings
-  try {
-    const _db=DB.get();
-    if(_db.fragrances) {
-      _db.fragrances.forEach(f=>{ if(f.min&&!f.minstock) { f.min=0; } });
-      DB.set(_db);
-    }
-  } catch(e){}
+
   seed();
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'});
   renderDash();
