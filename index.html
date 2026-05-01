@@ -1626,7 +1626,7 @@ function renderOrders(){
       <div class="li-ico" style="background:${o.paid==='Ναι'?'rgba(61,214,140,.1)':'rgba(245,101,101,.1)'};font-size:14px">${o.paid==='Ναι'?'✅':'⏳'}</div>
       <div class="li-body">
         <div class="li-t">${o.customer} ${o.status&&o.status!=='new'?SMAP[o.status]||'':''}</div>
-        <div class="li-s">${o.prodSummary} · ${o.payment||''}${o.delivery?' · 📅'+o.delivery.split('-').reverse().join('/')':''}</div>
+        <div class="li-s">${o.prodSummary} · ${o.payment||''}${o.delivery?' · 📅'+o.delivery.split('-').reverse().join('/'):''}</div>
       </div>
       <div class="li-r"><div class="li-amt">${fmt(o.groupTotal)}</div><div class="li-st">${fmtDF(o.date)}</div></div>
     </div>`).join(''):'<div class="empty" style="padding:28px 0"><div class="empty-ico">📋</div><div class="empty-t">Δεν βρέθηκε</div></div>';
