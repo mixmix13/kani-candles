@@ -401,9 +401,7 @@ body.locked{overflow:hidden}
           <button onclick="goPage('calc',document.getElementById('nb-calc'))" style="background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.3);border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px">
             <span style="font-size:22px">🧮</span><span style="font-size:10px;font-weight:700;color:var(--t1)">Κόστος</span>
           </button>
-          <button onclick="goPage('ai',document.getElementById('nb-ai'))" style="background:rgba(159,122,234,.1);border:1px solid rgba(159,122,234,.3);border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px">
-            <span style="font-size:22px">🤖</span><span style="font-size:10px;font-weight:700;color:var(--t1)">AI</span>
-          </button>
+
           <button onclick="goPage('fragrances')" style="background:rgba(255,105,180,.1);border:1px solid rgba(255,105,180,.3);border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px">
             <span style="font-size:22px">🌸</span><span style="font-size:10px;font-weight:700;color:var(--t1)">Αρώματα</span>
           </button>
@@ -804,10 +802,7 @@ body.locked{overflow:hidden}
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
       <span class="nb-lbl">Κόστος</span>
     </button>
-    <button class="nb" id="nb-ai" onclick="goPage('ai',this)">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-      <span class="nb-lbl">AI</span>
-    </button>
+    
   </nav>
 </div>
 
@@ -1148,7 +1143,7 @@ const CAT_ICO={Κεριά:'🕯️',Λαμπάδες:'🕯️',Σετ:'🎁',Α�
 // NAVIGATION
 // ════════════════════════════════════════
 let curPage='dash';
-const FAB_HIDE=['dash','analytics','ai','calendar','catalog','settings','expenses','calc','recipes','fragrances'];
+const FAB_HIDE=['dash','analytics','calendar','catalog','settings','expenses','calc','recipes','fragrances'];
 function goPage(pg,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
@@ -2306,7 +2301,7 @@ function updateBadges(){
 }
 
 let _of='all';
-function setOF(f,btn){_of=f;document.querySelectorAll('#pg-orders .tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderOrders()}
+function setOF(f,btn){_of=f;document.querySelectorAll('#pg-orders .tab').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderOrders();}
 function renderOrders(){
   const db=DB.get();
   const q=(document.getElementById('o-srch')||{}).value||'';
@@ -2343,7 +2338,7 @@ function renderOrders(){
       <div class="li-r">
         <div class="li-amt">${fmt(o.groupTotal)}</div>
         <div class="li-st">${fmtDF(o.date)}</div>
-        ${(()=>{const sibs=db.orders.filter(x=>x.orderNum===o.orderNum&&x.customer===o.customer&&x.date===o.date);const cost=calcOrderCost(sibs);const margin=o.groupTotal>0?Math.round((o.groupTotal-cost)/o.groupTotal*100):0;return cost>0?`<div style="font-size:9px;color:var(--gr);font-weight:700">${margin}% κέρδος</div>`:'';})()}
+        ${(()=>{try{const sibs=db.orders.filter(x=>x.orderNum===o.orderNum&&x.customer===o.customer&&x.date===o.date);const cost=calcOrderCost(sibs);const margin=o.groupTotal>0?Math.round((o.groupTotal-cost)/o.groupTotal*100):0;return cost>0?`<div style="font-size:9px;color:var(--gr);font-weight:700">${margin}% κέρδος</div>`:'';} catch(e){return '';}})()}
       </div>
     </div>`).join(''):'<div class="empty" style="padding:28px 0"><div class="empty-ico">📋</div><div class="empty-t">Δεν βρέθηκε</div></div>';
 }
